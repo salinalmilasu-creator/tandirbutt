@@ -3,12 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Tandır But - POS & Kasa Sistemi</title>
+  <title>Tandır But - Canlı Bulut POS Sistemi</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  
+  <!-- Firebase SDK (Canlı Eşitleme Motoru) -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
   <style>
     * {
       font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -84,9 +89,10 @@
         <h1 class="font-black text-slate-900 text-2xl tracking-tight">Tandır But</h1>
         <span class="text-xs font-bold text-amber-600 uppercase tracking-wider">Kasa & Adisyon Paneli</span>
       </div>
-      <div class="flex items-center gap-3 text-xs font-bold text-slate-700">
-        <span class="flex items-center gap-1 cursor-pointer"><i class="fa-regular fa-moon"></i> Gece Modu</span>
-        <span class="flex items-center gap-1 text-rose-500 cursor-pointer"><i class="fa-solid fa-arrow-right-from-bracket"></i> Çıkış</span>
+      <div class="flex flex-col items-end gap-1">
+        <span id="bulut-durumu" class="text-[10px] font-black text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200 flex items-center gap-1.5 shadow-sm">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Canlı Bulut Aktif
+        </span>
       </div>
     </div>
 
@@ -143,9 +149,9 @@
       </button>
 
       <!-- Ayarlar -->
-      <button onclick="alert('Tandır But Sistemi Aktif.')" class="bg-slate-600 hover:bg-slate-700 active:scale-95 transition text-white rounded-2xl p-4 flex flex-col items-center justify-center gap-2 shadow-sm">
-        <i class="fa-solid fa-gear text-2xl"></i>
-        <span class="font-bold text-xs">Ayarlar</span>
+      <button onclick="alert('Tandır But Canlı Bulut Sistemi Aktif!')" class="bg-slate-600 hover:bg-slate-700 active:scale-95 transition text-white rounded-2xl p-4 flex flex-col items-center justify-center gap-2 shadow-sm">
+        <i class="fa-solid fa-cloud text-2xl"></i>
+        <span class="font-bold text-xs">Bulut Durumu</span>
       </button>
     </div>
   </div>
@@ -947,7 +953,7 @@
         </div>
         <div class="flex items-center gap-2 pt-1">
           <input type="checkbox" id="yeni-urun-pilavli" class="w-4 h-4 rounded text-amber-600">
-          <label for="yeni-urun-pilavli" class="font-bold text-slate-700">Pilav Seçenekleri Sorulsun</label>
+          <label for="yeni-urun-pilavli" class="text-xs font-bold text-slate-700">Pilav Seçenekleri Sorulsun</label>
         </div>
         <div>
           <label class="text-[11px] font-bold text-slate-500">Yemek Fotoğrafı Seç</label>
@@ -998,8 +1004,25 @@
   <div id="termal-fis-alani" class="hidden"></div>
 
 
-  <!-- JAVASCRIPT MOTORU -->
+  <!-- JAVASCRIPT & FIREBASE CANLI BULUT MOTORU -->
   <script>
+    // -------------------------------------------------------------
+    // 1. FIREBASE BAĞLANTISI (CANLI SENKRONİZASYON MOTORU)
+    // -------------------------------------------------------------
+    const firebaseConfig = {
+      apiKey: "AIzaSyA6eLYScct-UoFk1XiYN4b5qpyBDH6dqSk",
+      authDomain: "tandirbut-pos.firebaseapp.com",
+      projectId: "tandirbut-pos",
+      storageBucket: "tandirbut-pos.firebasestorage.app",
+      messagingSenderId: "990674626325",
+      appId: "1:990674626325:web:e70766d8efffb9c4072b1c",
+      measurementId: "G-QPEMK07JHT"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    const docRef = db.collection("restoran_verileri").doc("tandirbut_ana_kasa");
+
     function resmiKucult(file, maxWidth = 500, quality = 0.75, callback) {
       if (!file) return callback(null);
       const reader = new FileReader();
@@ -1078,11 +1101,11 @@
     let gecmisSatislar = JSON.parse(localStorage.getItem('pos_gecmis_satislar_tb_opt')) || [];
     let musteriler = JSON.parse(localStorage.getItem('pos_musteriler_tb_opt')) || [];
     let cariListesi = JSON.parse(localStorage.getItem('pos_cariler_tb_opt')) || [];
-
     let bayiler = JSON.parse(localStorage.getItem('pos_bayiler_tb_data')) || varsayilanBayiler;
     let bayiHareketleri = JSON.parse(localStorage.getItem('pos_bayi_hareketler_tb')) || [];
-    let sevkGeciciKalemler = [];
 
+    let aktifEkran = 'ekran-dashboard';
+    let sevkGeciciKalemler = [];
     let aktifMasaId = null;
     let aktifKategori = kategoriler[0] ? kategoriler[0].ad : "";
     let seciliSatirIndex = null;
@@ -1090,7 +1113,63 @@
     let seciliTarihFiltresi = 'bugun';
     let almanSecilenler = {};
 
+    // -------------------------------------------------------------
+    // 2. FIREBASE CANLI DİNLEME (HER TELEFONA ANINDA AKTARILIR)
+    // -------------------------------------------------------------
+    docRef.onSnapshot((doc) => {
+      if (doc.exists) {
+        const data = doc.data();
+        kategoriler = data.kategoriler || varsayilanKategoriler;
+        menu = data.menu || varsayilanMenu;
+        acikAdisyonlar = data.acikAdisyonlar || {};
+        gecmisSatislar = data.gecmisSatislar || [];
+        musteriler = data.musteriler || [];
+        cariListesi = data.cariListesi || [];
+        bayiler = data.bayiler || varsayilanBayiler;
+        bayiHareketleri = data.bayiHareketleri || [];
+
+        // Yerel yedeğe de yaz
+        localStorage.setItem('pos_kats_tb_opt', JSON.stringify(kategoriler));
+        localStorage.setItem('pos_menu_tb_opt', JSON.stringify(menu));
+        localStorage.setItem('pos_acik_adisyonlar_tb_opt', JSON.stringify(acikAdisyonlar));
+        localStorage.setItem('pos_gecmis_satislar_tb_opt', JSON.stringify(gecmisSatislar));
+        localStorage.setItem('pos_musteriler_tb_opt', JSON.stringify(musteriler));
+        localStorage.setItem('pos_cariler_tb_opt', JSON.stringify(cariListesi));
+        localStorage.setItem('pos_bayiler_tb_data', JSON.stringify(bayiler));
+        localStorage.setItem('pos_bayi_hareketler_tb', JSON.stringify(bayiHareketleri));
+
+        // Ekranları canlı yenile
+        if (aktifEkran === 'ekran-masalar') masalariCiz();
+        if (aktifEkran === 'ekran-adisyon' && aktifMasaId) { adisyonuCiz(); ortaUrunleriCiz(); }
+        if (aktifEkran === 'ekran-bayiler') bayileriCiz();
+        if (aktifEkran === 'ekran-cariler') carileriListele();
+        if (aktifEkran === 'ekran-raporlar') raporlariGoster();
+        if (aktifEkran === 'ekran-urunler') urunYonetiminiCiz();
+        if (aktifEkran === 'ekran-kategoriler') kategoriYonetiminiCiz();
+        if (aktifEkran === 'ekran-rehber') rehberiCiz();
+        cariBadgeGuncelle();
+      } else {
+        // İlk açılışta veritabanını varsayılan verilerle başlat
+        kaydet();
+      }
+    }, (error) => {
+      console.warn("Bulut bağlantı uyarısı:", error);
+    });
+
     function kaydet() {
+      const paket = {
+        kategoriler,
+        menu,
+        acikAdisyonlar,
+        gecmisSatislar,
+        musteriler,
+        cariListesi,
+        bayiler,
+        bayiHareketleri,
+        guncellenme: new Date().toISOString()
+      };
+
+      // Yerel hafızaya yaz
       try {
         localStorage.setItem('pos_kats_tb_opt', JSON.stringify(kategoriler));
         localStorage.setItem('pos_menu_tb_opt', JSON.stringify(menu));
@@ -1100,9 +1179,10 @@
         localStorage.setItem('pos_cariler_tb_opt', JSON.stringify(cariListesi));
         localStorage.setItem('pos_bayiler_tb_data', JSON.stringify(bayiler));
         localStorage.setItem('pos_bayi_hareketler_tb', JSON.stringify(bayiHareketleri));
-      } catch(e) {
-        console.error("Depolama hatası:", e);
-      }
+      } catch(e) {}
+
+      // Google Bulut Firestore'a Gönder (Tüm telefonlar anında duyar)
+      docRef.set(paket).catch(err => console.error("Bulut kaydetme hatası:", err));
       cariBadgeGuncelle();
     }
 
@@ -1116,6 +1196,7 @@
     }
 
     function ekranAc(ekranId) {
+      aktifEkran = ekranId;
       ['ekran-dashboard', 'ekran-masalar', 'ekran-adisyon', 'ekran-bayiler', 'ekran-cariler', 'ekran-raporlar', 'ekran-urunler', 'ekran-kategoriler', 'ekran-rehber'].forEach(id => {
         document.getElementById(id).classList.toggle('hidden', id !== ekranId);
       });
