@@ -53,7 +53,7 @@
     <h2 class="text-2xl font-black text-slate-900 mt-5 mb-5 tracking-tight">Hoş Geldiniz</h2>
 
     <div class="grid grid-cols-3 gap-3">
-      <button onclick="ekranAc('ekran-masalar')" class="col-span-3 bg-blue-600 hover:bg-blue-700 active:scale-98 transition text-white rounded-2xl p-4 flex flex-col items-center justify-center gap-1.5 shadow-md cursor-pointer">
+      <button onclick="ekranAc('ekran-masalar')" class="col-span-3 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl p-4 flex flex-col items-center justify-center gap-1.5 shadow-md cursor-pointer">
         <i class="fa-solid fa-table-cells-large text-2xl"></i><span class="font-bold text-base tracking-wide">Masalar & Sipariş</span>
       </button>
       <button onclick="ekranAc('ekran-bayiler'); bayileriCiz();" class="col-span-3 bg-gradient-to-r from-amber-600 to-orange-600 text-white rounded-2xl p-3.5 flex items-center justify-between px-5 shadow-md cursor-pointer">
@@ -132,11 +132,11 @@
 
           <div class="my-2 p-2 bg-sky-50 border border-sky-200 rounded-xl text-xs space-y-1.5 relative">
             <div class="grid grid-cols-2 gap-1.5 relative">
-              <input type="text" id="input-musteri-ad" oninput="musteriAkilliAra(this.value, 'ad')" placeholder="Müşteri Adı..." class="w-full bg-white p-2 border rounded-lg font-bold text-xs outline-none">
-              <input type="text" id="input-musteri-tel" oninput="musteriAkilliAra(this.value, 'tel')" placeholder="Telefon..." class="w-full bg-white p-2 border rounded-lg font-bold text-xs outline-none">
+              <input type="text" id="input-musteri-ad" oninput="musteriAkilliAra(this.value, 'ad'); musteriBilgisiGuncelle();" placeholder="Müşteri Adı..." class="w-full bg-white p-2 border rounded-lg font-bold text-xs outline-none">
+              <input type="text" id="input-musteri-tel" oninput="musteriAkilliAra(this.value, 'tel'); musteriBilgisiGuncelle();" placeholder="Telefon..." class="w-full bg-white p-2 border rounded-lg font-bold text-xs outline-none">
               <div id="musteri-oneri-kutusu" class="absolute z-50 left-0 right-0 top-full mt-1 bg-white border-2 shadow-2xl hidden max-h-40 overflow-y-auto"></div>
             </div>
-            <input type="text" id="input-musteri-adres" placeholder="Teslimat Adresi..." class="w-full bg-white p-1.5 border rounded-lg text-xs">
+            <input type="text" id="input-musteri-adres" oninput="musteriBilgisiGuncelle();" placeholder="Teslimat Adresi..." class="w-full bg-white p-1.5 border rounded-lg text-xs">
           </div>
 
           <div class="mb-2 p-2.5 bg-amber-50 border border-amber-300 rounded-xl text-xs space-y-1.5">
@@ -243,7 +243,7 @@
       <h2 class="text-2xl font-black">Gün Sonu & Gelir Dağılımı</h2>
       <div class="flex gap-2">
         <button onclick="whatsappRaporuGonder()" class="bg-emerald-600 text-white font-black text-xs px-4 py-2 rounded-full cursor-pointer"><i class="fa-brands fa-whatsapp mr-1"></i> WhatsApp</button>
-        <button onclick="tumSatisVeCarileriSifirla()" class="bg-rose-50 text-rose-600 font-bold text-xs px-4 py-2 rounded-full cursor-pointer">Raporu Sıfırla</button>
+        <button onclick="tumSatisVeCarileriSifirla()" class="bg-rose-50 text-rose-600 font-bold text-xs px-4 py-2 rounded-full cursor-pointer">Sıfırla</button>
         <button onclick="ekranAc('ekran-dashboard')" class="bg-black text-white font-bold text-xs px-5 py-2 rounded-full cursor-pointer">Ana Menü</button>
       </div>
     </div>
@@ -318,8 +318,7 @@
     <div id="bayi-kartlari-grid" class="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-5"></div>
     <div class="bg-white rounded-2xl border shadow-sm overflow-hidden">
       <div class="p-4 border-b bg-slate-50 font-black text-sm">Tüm Bayi Sevkiyat & Tahsilat Hareketleri</div>
-      <table class="w-full text-left text-xs"><tbody id="bayi-hareketler-govde" class="divide-y"></tbody>
-      </table>
+      <table class="w-full text-left text-xs"><tbody id="bayi-hareketler-govde" class="divide-y"></tbody></table>
     </div>
   </div>
 
@@ -672,6 +671,14 @@
       ekranAc('ekran-adisyon'); sagKategorileriCiz(); ortaUrunleriCiz(); adisyonuCiz();
     }
 
+    function musteriBilgisiGuncelle() {
+      if(!aktifMasaId) return;
+      acikAdisyonlar[aktifMasaId].musteriAd = document.getElementById('input-musteri-ad').value.trim();
+      acikAdisyonlar[aktifMasaId].musteriTel = document.getElementById('input-musteri-tel').value.trim();
+      acikAdisyonlar[aktifMasaId].musteriAdres = document.getElementById('input-musteri-adres').value.trim();
+      kaydet();
+    }
+
     function sagKategorileriCiz() {
       document.getElementById('sag-kategori-listesi').innerHTML = kategoriler.map(k => `<div onclick="kategoriSec('${k.ad}')" class="kategori-kart-dev ${aktifKategori === k.ad ? 'aktif' : ''}"><img src="${k.foto}"><span>${k.ad}</span></div>`).join('');
     }
@@ -888,13 +895,31 @@
     async function mutfakFisiYazdir() {
       const ad = acikAdisyonlar[aktifMasaId];
       if (!ad || !ad.kalemler.length) return alert('Adisyon boş!');
+      
+      const mAd = document.getElementById('input-musteri-ad').value.trim();
+      const mTel = document.getElementById('input-musteri-tel').value.trim();
+      const mAdres = document.getElementById('input-musteri-adres').value.trim();
+
       if(printCharacteristic) {
         let txt = "    *** MUTFAK SIPARISI ***\n\nMASA: " + aktifMasaId + "\nSaat: " + new Date().toLocaleTimeString('tr-TR') + "\n--------------------------------\n";
-        if(ad.not) txt += "NOT: " + ad.not + "\n--------------------------------\n";
+        if(mAd || mTel) txt += "MUSTERI: " + mAd + " " + mTel + "\n";
+        if(mAdres) txt += "ADRES: " + mAdres + "\n";
+        if(ad.not) txt += "NOT: " + ad.not + "\n";
+        txt += "--------------------------------\n";
         ad.kalemler.forEach(k => { txt += k.adet + "x " + k.tamAd + "\n"; }); txt += "--------------------------------\n";
         await yaziciyaMetinGonder(txt); return;
       }
-      document.getElementById('termal-fis-alani').innerHTML = `<div style="text-align:center; border-bottom:3px solid #000; padding-bottom:6px; margin-bottom:8px;"><h2 style="font-size:18px; margin:0; background:#000; color:#fff; font-weight:900;">*** MUTFAK SİPARİŞİ ***</h2><h1 style="font-size:24px; margin:6px 0; font-weight:900;">${aktifMasaId}</h1><p style="font-size:13px; margin:0; font-weight:900;">${new Date().toLocaleTimeString('tr-TR')}</p></div>${ad.not ? `<div style="border:3px solid #000; padding:6px; margin:6px 0; font-size:15px; font-weight:900;">⚠️ NOT: ${ad.not}</div>` : ''}<table style="width:100%; font-size:15px; margin-top:8px; border-collapse:collapse;">${ad.kalemler.map(k => `<tr><td style="font-weight:900; width:40px; font-size:17px;">${k.adet}x</td><td style="font-weight:900; font-size:15px;">${k.tamAd}</td></tr>`).join('')}</table>`;
+      document.getElementById('termal-fis-alani').innerHTML = `
+        <div style="text-align:center; border-bottom:3px solid #000; padding-bottom:6px; margin-bottom:8px;">
+          <h2 style="font-size:18px; margin:0; background:#000; color:#fff; font-weight:900;">*** MUTFAK SİPARİŞİ ***</h2>
+          <h1 style="font-size:24px; margin:6px 0; font-weight:900;">${aktifMasaId}</h1>
+          <p style="font-size:13px; margin:0; font-weight:900;">${new Date().toLocaleTimeString('tr-TR')}</p>
+        </div>
+        ${(mAd || mTel) ? `<div style="border:2px solid #000; padding:4px; margin:6px 0; font-size:14px; font-weight:900;">MÜŞTERİ: ${mAd} ${mTel} <br> ${mAdres ? `ADRES: ${mAdres}` : ''}</div>` : ''}
+        ${ad.not ? `<div style="border:3px solid #000; padding:6px; margin:6px 0; font-size:15px; font-weight:900;">⚠️ NOT: ${ad.not}</div>` : ''}
+        <table style="width:100%; font-size:15px; margin-top:8px; border-collapse:collapse;">
+          ${ad.kalemler.map(k => `<tr><td style="font-weight:900; width:40px; font-size:17px;">${k.adet}x</td><td style="font-weight:900; font-size:15px;">${k.tamAd}</td></tr>`).join('')}
+        </table>`;
       window.print();
     }
 
@@ -905,18 +930,40 @@
       const ind = ad.indirim || 0; const bah = ad.bahsis || 0;
       const top = Math.max(0, ara - ind + bah);
 
+      const mAd = document.getElementById('input-musteri-ad').value.trim();
+      const mTel = document.getElementById('input-musteri-tel').value.trim();
+      const mAdres = document.getElementById('input-musteri-adres').value.trim();
+
       if(printCharacteristic) {
         let txt = "       " + (yaziciAyarlari.baslik || 'TANDIR BUT') + "\n";
         if(yaziciAyarlari.tel) txt += "    Tel: " + yaziciAyarlari.tel + "\n";
         txt += "--------------------------------\nMASA: " + aktifMasaId + "\nTarih: " + new Date().toLocaleString('tr-TR') + "\n";
-        if(ad.musteriAd) txt += "Musteri: " + ad.musteriAd + "\n";
+        if(mAd || mTel) txt += "Musteri: " + mAd + " " + mTel + "\n";
+        if(mAdres) txt += "Adres: " + mAdres + "\n";
         txt += "--------------------------------\n";
         ad.kalemler.forEach(k => { txt += k.adet + "x " + k.tamAd + "\n                      " + (k.adet * k.birimFiyat).toFixed(2) + " TL\n"; });
         txt += "--------------------------------\nTOPLAM:               " + top.toFixed(2) + " TL\n--------------------------------\n     " + (yaziciAyarlari.altNot || 'Afiyet Olsun!') + "\n";
         await yaziciyaMetinGonder(txt); return;
       }
 
-      document.getElementById('termal-fis-alani').innerHTML = `<div style="text-align:center; border-bottom:3px solid #000; padding-bottom:6px; margin-bottom:8px;"><h2 style="font-size:22px; margin:0; font-weight:900;">${yaziciAyarlari.baslik || 'TANDIR BUT'}</h2>${yaziciAyarlari.tel ? `<p style="font-size:13px; margin:2px 0; font-weight:900;">Tel: ${yaziciAyarlari.tel}</p>` : ''}<h3 style="font-size:18px; margin:6px 0; background:#000; color:#fff; font-weight:900;">${aktifMasaId}</h3><p style="font-size:12px; margin:0; font-weight:900;">${new Date().toLocaleString('tr-TR')}</p></div>${ad.musteriAd ? `<div style="border:2px solid #000; padding:4px; font-size:13px; font-weight:900; margin:6px 0;">MÜŞTERİ: ${ad.musteriAd} ${ad.musteriTel ? `(${ad.musteriTel})` : ''}</div>` : ''}<table style="width:100%; font-size:14px; margin:8px 0; border-collapse:collapse;">${ad.kalemler.map(k => `<tr><td style="font-weight:900;">${k.tamAd}</td><td style="text-align:center; width:30px; font-weight:900;">${k.adet}</td><td style="text-align:right; font-weight:900;">₺${(k.adet * k.birimFiyat).toFixed(2)}</td></tr>`).join('')}</table><div style="border-top:3px solid #000; padding-top:6px; font-size:18px; font-weight:900; text-align:right;">TOPLAM: ₺${top.toFixed(2)}</div><div style="text-align:center; margin-top:8px; font-size:12px; border-top:2px dashed #000; padding-top:6px; font-weight:900;">${yaziciAyarlari.altNot || 'Afiyet Olsun!'}</div>`;
+      document.getElementById('termal-fis-alani').innerHTML = `
+        <div style="text-align:center; border-bottom:3px solid #000; padding-bottom:6px; margin-bottom:8px;">
+          <h2 style="font-size:22px; margin:0; font-weight:900;">${yaziciAyarlari.baslik || 'TANDIR BUT'}</h2>
+          ${yaziciAyarlari.tel ? `<p style="font-size:13px; margin:2px 0; font-weight:900;">Tel: ${yaziciAyarlari.tel}</p>` : ''}
+          <h3 style="font-size:18px; margin:6px 0; background:#000; color:#fff; font-weight:900;">${aktifMasaId}</h3>
+          <p style="font-size:12px; margin:0; font-weight:900;">${new Date().toLocaleString('tr-TR')}</p>
+        </div>
+        ${(mAd || mTel) ? `<div style="border:2px solid #000; padding:4px; font-size:13px; font-weight:900; margin:6px 0;">MÜŞTERİ: ${mAd} ${mTel ? `(${mTel})` : ''} <br> ${mAdres ? `ADRES: ${mAdres}` : ''}</div>` : ''}
+        <table style="width:100%; font-size:14px; margin:8px 0; border-collapse:collapse;">
+          ${ad.kalemler.map(k => `<tr><td style="font-weight:900;">${k.tamAd}</td><td style="text-align:center; width:30px; font-weight:900;">${k.adet}</td><td style="text-align:right; font-weight:900;">₺${(k.adet * k.birimFiyat).toFixed(2)}</td></tr>`).join('')}
+        </table>
+        <div style="border-top:3px solid #000; padding-top:6px; font-size:18px; font-weight:900; text-align:right;">
+          TOPLAM: ₺${top.toFixed(2)}
+        </div>
+        <div style="text-align:center; margin-top:8px; font-size:12px; border-top:2px dashed #000; padding-top:6px; font-weight:900;">
+          ${yaziciAyarlari.altNot || 'Afiyet Olsun!'}
+        </div>
+      `;
       window.print();
     }
 
@@ -1082,7 +1129,7 @@
             <div><h4 class="font-black text-sm">${u.ad}</h4><span class="text-xs font-bold text-teal-700">${u.stokTakip ? `Stok: ${u.stokAdet}` : 'Limitsiz'}</span></div>
           </div>
           <div class="flex items-center gap-2 pt-2 border-t">
-            <input type="checkbox" onchange="u.stokTakip = this.checked; kaydet(); stokListesiniCiz();" ${u.stokTakip ? 'checked' : ''}>
+            <input type="checkbox" onchange="u.stokTakip = this.checked; kaydet(); stokListesiniCiz();" ${u.stokTakip ? 'checked' : ''} class="w-4 h-4 cursor-pointer">
             <input type="number" id="stok-val-${u.id}" value="${u.stokAdet || 0}" class="w-20 p-1 border rounded text-center font-bold">
             <button onclick="u.stokAdet = parseInt(document.getElementById('stok-val-${u.id}').value)||0; kaydet(); stokListesiniCiz(); alert('Güncellendi');" class="bg-teal-600 text-white px-3 py-1 rounded text-xs font-bold cursor-pointer">Kaydet</button>
           </div>
@@ -1158,7 +1205,7 @@
       kaydet(); document.getElementById('modal-bayi-tahsilat').classList.add('hidden'); bayileriCiz(); alert('Tahsilat Kaydedildi!');
     }
 
-    // CARİLER
+    // CARİLER & İPTAL İŞLEMİ
     function carileriListele() {
       const gov = document.getElementById('cari-tablo-govde');
       if (!gov) return;
