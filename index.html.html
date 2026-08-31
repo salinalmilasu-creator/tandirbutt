@@ -53,7 +53,7 @@
     <h2 class="text-2xl font-black text-slate-900 mt-5 mb-5 tracking-tight">Hoş Geldiniz</h2>
 
     <div class="grid grid-cols-3 gap-3">
-      <button onclick="ekranAc('ekran-masalar')" class="col-span-3 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl p-4 flex flex-col items-center justify-center gap-1.5 shadow-md cursor-pointer">
+      <button onclick="ekranAc('ekran-masalar')" class="col-span-3 bg-blue-600 hover:bg-blue-700 active:scale-98 transition text-white rounded-2xl p-4 flex flex-col items-center justify-center gap-1.5 shadow-md cursor-pointer">
         <i class="fa-solid fa-table-cells-large text-2xl"></i><span class="font-bold text-base tracking-wide">Masalar & Sipariş</span>
       </button>
       <button onclick="ekranAc('ekran-bayiler'); bayileriCiz();" class="col-span-3 bg-gradient-to-r from-amber-600 to-orange-600 text-white rounded-2xl p-3.5 flex items-center justify-between px-5 shadow-md cursor-pointer">
@@ -132,8 +132,8 @@
 
           <div class="my-2 p-2 bg-sky-50 border border-sky-200 rounded-xl text-xs space-y-1.5 relative">
             <div class="grid grid-cols-2 gap-1.5 relative">
-              <input type="text" id="input-musteri-ad" oninput="musteriAkilliAra(this.value, 'ad'); musteriBilgisiGuncelle();" placeholder="Müşteri Adı..." class="w-full bg-white p-2 border rounded-lg font-bold text-xs outline-none">
-              <input type="text" id="input-musteri-tel" oninput="musteriAkilliAra(this.value, 'tel'); musteriBilgisiGuncelle();" placeholder="Telefon..." class="w-full bg-white p-2 border rounded-lg font-bold text-xs outline-none">
+              <input type="text" id="input-musteri-ad" oninput="musteriAkilliAra(this.value); musteriBilgisiGuncelle();" placeholder="Müşteri Adı..." class="w-full bg-white p-2 border rounded-lg font-bold text-xs outline-none">
+              <input type="text" id="input-musteri-tel" oninput="musteriAkilliAra(this.value); musteriBilgisiGuncelle();" placeholder="Telefon..." class="w-full bg-white p-2 border rounded-lg font-bold text-xs outline-none">
               <div id="musteri-oneri-kutusu" class="absolute z-50 left-0 right-0 top-full mt-1 bg-white border-2 shadow-2xl hidden max-h-40 overflow-y-auto"></div>
             </div>
             <input type="text" id="input-musteri-adres" oninput="musteriBilgisiGuncelle();" placeholder="Teslimat Adresi..." class="w-full bg-white p-1.5 border rounded-lg text-xs">
@@ -243,7 +243,7 @@
       <h2 class="text-2xl font-black">Gün Sonu & Gelir Dağılımı</h2>
       <div class="flex gap-2">
         <button onclick="whatsappRaporuGonder()" class="bg-emerald-600 text-white font-black text-xs px-4 py-2 rounded-full cursor-pointer"><i class="fa-brands fa-whatsapp mr-1"></i> WhatsApp</button>
-        <button onclick="tumSatisVeCarileriSifirla()" class="bg-rose-50 text-rose-600 font-bold text-xs px-4 py-2 rounded-full cursor-pointer">Sıfırla</button>
+        <button onclick="tumSatisVeCarileriSifirla()" class="bg-rose-50 text-rose-600 font-bold text-xs px-4 py-2 rounded-full cursor-pointer">Raporu Sıfırla</button>
         <button onclick="ekranAc('ekran-dashboard')" class="bg-black text-white font-bold text-xs px-5 py-2 rounded-full cursor-pointer">Ana Menü</button>
       </div>
     </div>
@@ -348,7 +348,7 @@
     <div id="rehber-listesi" class="bg-white rounded-2xl border p-4 divide-y text-xs"></div>
   </div>
 
-  <!-- 10. ÜRÜNLER -->
+  <!-- 10. ÜRÜNLER + DÜZENLEME EKLİ EKRAN -->
   <div id="ekran-urunler" class="hidden min-h-screen bg-slate-50 p-6 max-w-6xl mx-auto space-y-6">
     <div class="flex justify-between items-center pb-4 border-b"><h2 class="text-2xl font-black">Ürün Yönetimi</h2><button onclick="ekranAc('ekran-dashboard')" class="bg-black text-white font-bold text-xs px-4 py-2 rounded-full cursor-pointer">Ana Menü</button></div>
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -407,12 +407,34 @@
         <input type="text" id="cfg-yazici-tel" placeholder="Telefon..." class="w-full p-2.5 border rounded-xl">
         <select id="cfg-yazici-genislik" class="w-full p-2.5 border rounded-xl font-bold"><option value="80mm">80mm</option><option value="58mm">58mm</option></select>
         <textarea id="cfg-yazici-altnot" rows="2" placeholder="Alt mesaj..." class="w-full p-2.5 border rounded-xl"></textarea>
-        <button onclick="yaziciAyarlariniKaydet()" class="w-full bg-slate-900 text-white font-bold py-3 rounded-xl cursor-pointer">Kaydet</button>
+        <button onclick="yaziciAyarlariKaydet()" class="w-full bg-slate-900 text-white font-bold py-3 rounded-xl cursor-pointer">Kaydet</button>
       </div>
     </div>
   </div>
 
   <!-- MODALLAR -->
+  <div id="modal-urun-duzenle" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center hidden p-4">
+    <div class="bg-white rounded-3xl p-6 max-w-lg w-full shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+      <div class="flex justify-between items-center pb-2 border-b">
+        <h3 class="text-base font-black">Ürünü Düzenle</h3>
+        <button onclick="document.getElementById('modal-urun-duzenle').classList.add('hidden')" class="cursor-pointer">✕</button>
+      </div>
+      <input type="hidden" id="edit-urun-id">
+      <div class="space-y-3 text-xs">
+        <div><label class="font-bold block mb-1">Ürün Adı</label><input type="text" id="edit-urun-ad" class="w-full p-2.5 border rounded-xl font-bold"></div>
+        <div><label class="font-bold block mb-1">Kategori</label><select id="edit-urun-kat" class="w-full p-2.5 border rounded-xl font-bold"></select></div>
+        <div class="grid grid-cols-2 gap-2">
+          <div><label class="font-bold block mb-1">Masa Fiyatı (₺)</label><input type="number" id="edit-fiyat-masa" class="w-full p-2.5 border rounded-xl font-bold"></div>
+          <div><label class="font-bold block mb-1">Paket Fiyatı (₺)</label><input type="number" id="edit-fiyat-tel" class="w-full p-2.5 border rounded-xl font-bold"></div>
+        </div>
+        <div><label class="font-bold block mb-1">Maliyet (₺)</label><input type="number" id="edit-urun-maliyet" class="w-full p-2.5 border rounded-xl font-bold"></div>
+        <div class="flex items-center gap-2 pt-1"><input type="checkbox" id="edit-urun-pilavli" class="w-4 h-4 cursor-pointer"><label class="font-bold">Pilav Seçenekleri Sorulsun</label></div>
+        <div><label class="font-bold block mb-1">Fotoğrafı Değiştir (İsteğe Bağlı)</label><input type="file" id="edit-urun-foto" accept="image/*" class="w-full text-xs"></div>
+      </div>
+      <button onclick="urunDuzenlemeyiKaydet()" class="w-full bg-emerald-600 text-white font-bold py-3 rounded-xl text-xs cursor-pointer">Değişiklikleri Kaydet</button>
+    </div>
+  </div>
+
   <div id="modal-pilav-secim" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center hidden p-4">
     <div class="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl space-y-3">
       <h3 id="modal-urun-baslik" class="text-base font-black text-center">Pilav Tercihi</h3>
@@ -822,15 +844,18 @@
       }).join('');
       almanHesapla(); document.getElementById('modal-alman-usulu').classList.remove('hidden');
     }
+
     function almanAdetDegistir(idx, f, max) {
       almanSecilenler[idx] = Math.max(0, Math.min(max, (almanSecilenler[idx] || 0) + f));
       document.getElementById(`alman-adet-${idx}`).innerText = almanSecilenler[idx]; almanHesapla();
     }
+
     function almanHesapla() {
       const ad = acikAdisyonlar[aktifMasaId]; let top = 0;
       Object.keys(almanSecilenler).forEach(i => { if (almanSecilenler[i] > 0 && ad.kalemler[i]) top += almanSecilenler[i] * ad.kalemler[i].birimFiyat; });
       document.getElementById('alman-secilen-toplam').innerText = `₺${top.toFixed(2)}`; return top;
     }
+
     function almanUsuluOdemeTamamla(yontem) {
       const ad = acikAdisyonlar[aktifMasaId]; const top = almanHesapla();
       if (top <= 0) return alert('Lütfen ürün adedi seçin.');
@@ -853,12 +878,14 @@
       document.getElementById('karisik-input-kk').value = 0; document.getElementById('karisik-input-iban').value = 0; document.getElementById('karisik-input-online').value = 0;
       karisikHesapla(); document.getElementById('modal-karisik-odeme').classList.remove('hidden');
     }
+
     function karisikHesapla() {
       const top = acikAdisyonlar[aktifMasaId].kalemler.reduce((a, b) => a + (b.birimFiyat * b.adet), 0);
       const n = parseFloat(document.getElementById('karisik-input-nakit').value) || 0; const k = parseFloat(document.getElementById('karisik-input-kk').value) || 0; const i = parseFloat(document.getElementById('karisik-input-iban').value) || 0; const o = parseFloat(document.getElementById('karisik-input-online').value) || 0;
       const diff = top - (n + k + i + o); const el = document.getElementById('karisik-kalan-tutar');
       if (Math.abs(diff) < 0.01) { el.innerText = "₺0.00 (Tam)"; el.className = "font-bold text-emerald-600"; } else if (diff > 0) { el.innerText = `₺${diff.toFixed(2)} Eksik`; el.className = "font-bold text-rose-600"; } else { el.innerText = `₺${Math.abs(diff).toFixed(2)} Fazla`; el.className = "font-bold text-amber-600"; }
     }
+
     function karisikOdemeyiTamamla() {
       const top = acikAdisyonlar[aktifMasaId].kalemler.reduce((a, b) => a + (b.birimFiyat * b.adet), 0);
       const n = parseFloat(document.getElementById('karisik-input-nakit').value) || 0; const k = parseFloat(document.getElementById('karisik-input-kk').value) || 0; const i = parseFloat(document.getElementById('karisik-input-iban').value) || 0; const o = parseFloat(document.getElementById('karisik-input-online').value) || 0;
@@ -1302,18 +1329,83 @@
       `).join('');
     }
 
-    // ÜRÜNLER
+    // ÜRÜNLER (FİYAT VE ÜRÜN DÜZENLEME EKLİ)
     function urunYonetiminiCiz() {
       const sel = document.getElementById('yeni-urun-kat');
       if (sel) sel.innerHTML = kategoriler.map(k => `<option value="${k.ad}">${k.ad}</option>`).join('');
       const l = document.getElementById('yonetim-urun-listesi');
       if (!l) return;
       l.innerHTML = menu.map(u => `
-        <div class="p-3 border rounded-2xl bg-slate-50 flex items-center justify-between">
-          <div class="flex items-center gap-3"><img src="${u.foto}" class="w-12 h-12 rounded-xl object-cover"><div><h5 class="font-black text-sm">${u.ad}</h5><span class="text-xs text-slate-500">${u.kategori} • ₺${u.fiyatMasa}</span></div></div>
-          <button onclick="menu = menu.filter(x => x.id !== ${u.id}); kaydet(); urunYonetiminiCiz();" class="text-rose-500 cursor-pointer">✕</button>
+        <div class="p-3 border-2 border-slate-200 rounded-2xl bg-slate-50 flex flex-col justify-between gap-2.5">
+          <div class="flex items-center gap-3">
+            <div class="w-16 h-16 rounded-xl bg-slate-200 overflow-hidden shrink-0 border border-slate-300">
+              <img src="${u.foto}" class="w-full h-full object-cover">
+            </div>
+            <div class="flex-1 min-w-0">
+              <h5 class="font-black text-sm text-slate-900 truncate">${u.ad}</h5>
+              <p class="text-[11px] text-slate-500 font-semibold">${u.kategori} ${u.pilavSecimli ? '• (Pilavlı)' : ''}</p>
+              <div class="flex items-center gap-2 text-xs font-bold mt-1">
+                <span class="text-amber-600">M: ₺${u.fiyatMasa}</span>
+                <span class="text-sky-600">T: ₺${u.fiyatTel}</span>
+              </div>
+            </div>
+            <button onclick="urunSil(${u.id})" class="text-rose-500 hover:text-rose-700 p-2 cursor-pointer"><i class="fa-solid fa-trash"></i></button>
+          </div>
+          <button onclick="urunDuzenleModalAc(${u.id})" class="w-full bg-slate-900 text-white rounded-xl py-2 text-center text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-sm cursor-pointer">
+            <i class="fa-solid fa-pen-to-square text-amber-400"></i> Ürünü & Fiyatı Düzenle
+          </button>
         </div>
       `).join('');
+    }
+
+    function urunSil(id) {
+      if(confirm('Ürünü silmek istediğinize emin misiniz?')) {
+        menu = menu.filter(u => u.id !== id);
+        kaydet(); urunYonetiminiCiz();
+      }
+    }
+
+    function urunDuzenleModalAc(id) {
+      const u = menu.find(x => x.id === id);
+      if(!u) return;
+      document.getElementById('edit-urun-id').value = u.id;
+      document.getElementById('edit-urun-ad').value = u.ad;
+      document.getElementById('edit-fiyat-masa').value = u.fiyatMasa;
+      document.getElementById('edit-fiyat-tel').value = u.fiyatTel;
+      document.getElementById('edit-urun-maliyet').value = u.maliyet || 0;
+      document.getElementById('edit-urun-pilavli').checked = !!u.pilavSecimli;
+      document.getElementById('edit-urun-foto').value = '';
+
+      document.getElementById('edit-urun-kat').innerHTML = kategoriler.map(k => `<option value="${k.ad}" ${k.ad === u.kategori ? 'selected' : ''}>${k.ad}</option>`).join('');
+      document.getElementById('modal-urun-duzenle').classList.remove('hidden');
+    }
+
+    function urunDuzenlemeyiKaydet() {
+      const id = parseInt(document.getElementById('edit-urun-id').value);
+      const u = menu.find(x => x.id === id);
+      if(!u) return;
+
+      const ad = document.getElementById('edit-urun-ad').value.trim();
+      const kat = document.getElementById('edit-urun-kat').value;
+      const fM = parseFloat(document.getElementById('edit-fiyat-masa').value) || 0;
+      const fT = parseFloat(document.getElementById('edit-fiyat-tel').value) || fM;
+      const mal = parseFloat(document.getElementById('edit-urun-maliyet').value) || 0;
+      const pilav = document.getElementById('edit-urun-pilavli').checked;
+      const fotoIn = document.getElementById('edit-urun-foto');
+
+      if(!ad || fM <= 0) return alert('Ürün adı ve geçerli fiyat girin.');
+
+      function guncelle(fUrl) {
+        u.ad = ad; u.kategori = kat; u.fiyatMasa = fM; u.fiyatTel = fT; u.maliyet = mal; u.pilavSecimli = pilav;
+        if(fUrl) u.foto = fUrl;
+        kaydet(); document.getElementById('modal-urun-duzenle').classList.add('hidden'); urunYonetiminiCiz(); alert('Güncellendi!');
+      }
+
+      if(fotoIn.files && fotoIn.files[0]) {
+        resmiKucult(fotoIn.files[0], 400, 0.7, (fUrl) => guncelle(fUrl));
+      } else {
+        guncelle(null);
+      }
     }
 
     function yeniUrunEkle() {
